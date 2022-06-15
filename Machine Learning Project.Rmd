@@ -1,0 +1,78 @@
+---
+title: "Machine Learning Course Project"
+author: "Eduardo Zamudio"
+date: "6/15/2022"
+output: html_document
+---
+
+```{r libraries and data source, include=FALSE,echo=TRUE}
+library(caret)
+library(randomForest)
+#Load Information
+link <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+training_Data_Set <- read.csv(url(link))
+link <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+testing_Data_Set <- read.csv(url(link))
+```
+
+# Machine Learning Project
+
+The goal of the project is to predict the manner in which they did the exercise,  the "classe" variable in the training set. The file use the database, of Velloso et.al (2013)
+
+```{r filter information, include=FALSE}
+
+##Analysis of information and deletion fo the NA variables
+
+##Analysis of information
+
+d<- apply(training_Data_Set , 2, function(x) {length(which(is.na(x)|x==""))/nrow(training_Data_Set)})
+d <- data.frame(d)
+d <- 1-d
+training_Data_Set <- training_Data_Set[,which(d>0.9)]
+testing_Data_Set <- testing_Data_Set[,which(d>0.9)]
+
+```
+
+## Cleaning the dataset
+
+The dataset content some time tags and index column that has been deleted from the dataset, and one variable with nearzero variance
+
+```{r pressure, include=FALSE}
+
+##Delete the index column, names and time
+training_Data_Set <- training_Data_Set[,-c(1:5)]
+str(training_Data_Set)
+##Delete near Zero Var predictors
+training_Data_Set <- training_Data_Set[,-nearZeroVar(training_Data_Set)]
+#Transform Class in factor 
+training_Data_Set$classe <- as.factor(training_Data_Set$classe)
+```
+
+
+## Testing and training datasets
+
+In accordance with the data volume, the data was splitted 60/40
+```{r split, include=FALSE}
+set.seed(1989898)
+e<- createDataPartition(training_Data_Set$classe, p=0.6, list = FALSE)
+training <- training_Data_Set[e,]
+test <- training_Data_Set[-e,]
+```
+
+## Random Forest 
+
+These algorithm suits remarkably to the dataset and has a high accuracy up to 99.9% in the training and test set
+
+```{r training, cache=TRUE, echo=FALSE}
+clasiffier <- randomForest(x = training_Data_Set[,-54], y = training_Data_Set[,ncol(training_Data_Set)],ntree = 500)
+y_pred <- predict(clasiffier, newdata = test[,-54])
+table(y_pred,test[,54])
+```
+
+##Quizz 
+
+```{R Quizz, include = FALSE,}
+nearZeroVar(training_Data_Set)
+```
+##Reference
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
